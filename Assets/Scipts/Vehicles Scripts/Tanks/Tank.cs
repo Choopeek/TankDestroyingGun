@@ -8,7 +8,7 @@ public class Tank : MonoBehaviour
     private Scroll_Track trackLeft;
     private Scroll_Track trackRight;
 
-    GameObject turret;
+    public GameObject turret;
     [SerializeField] GameObject gun;
     GameObject gunEdge;    
     PlayerCombatModule playerCM;
@@ -23,6 +23,8 @@ public class Tank : MonoBehaviour
     
 
     public TankClass tank = new TankClass();
+    public CombatSystem combatSystem = new CombatSystem();
+
 
     private void Start()
     {
@@ -48,6 +50,8 @@ public class Tank : MonoBehaviour
         //Handling RigidBody component
         tankRigidBody = this.GetComponent<Rigidbody>();
         tankRigidBody.mass = tank.weight;
+
+        
     }
 
     void HandleProjectile()
@@ -161,6 +165,10 @@ public class Tank : MonoBehaviour
         shotFired = Instantiate(tank.mainGunProjectile, shootPos.position, shootPos.rotation) as GameObject;
         projectileSCR = shotFired.GetComponent<Projectile>();
         projectileSCR.ShootProjectile(tank.mGProjectileVelocity);
+        projectileSCR.whoShot = this.gameObject;
+        projectileSCR.penetration = combatSystem.projectilePenetrationValue(tank.mGMinPenetration, tank.mGGunMaxPenetration);
+        projectileSCR.damage = tank.mGDamage;
+        
     }
 
     //checks whenever the gun is in bounds of the Angles; If so - it changes the variables, so the gun can't be moved up or down anymore;
@@ -192,5 +200,84 @@ public class Tank : MonoBehaviour
         }
     }
 
+
+
+    #region CombatMechanic
     
+   
+
+    public void Hit(GameObject target, GameObject whoShot, string partThatWasHit, int projectileDamage, int projectilePenetration)
+    {
+        int[] armorValues = ArmorThicknessThatWasHit(partThatWasHit);
+
+        if (combatSystem.GotHit(target, whoShot, projectilePenetration, armorValues))
+        {
+            TakeDamage(projectileDamage);
+        }
+        else
+        {
+            return;
+        }
+    }
+
+    void TakeDamage(int damage)
+    {
+        tank.hitPoints = tank.hitPoints - damage;
+    }
+
+    int[] ArmorThicknessThatWasHit(string partThatWasHit)
+    {
+        int frontArmor = 0;
+        int sideArmor = 0;
+        int rearArmor = 0;
+
+        if (partThatWasHit.Contains("Chassis"))
+        {
+            frontArmor = tank.chassisFrontArmor;
+            sideArmor = tank.chassisSideArmor;
+            rearArmor = tank.chassisRearArmor;
+        }
+
+        if (partThatWasHit.Contains("Turret"))
+        {
+            frontArmor = tank.turretFrontArmor;
+            sideArmor = tank.turretSideArmor;
+            rearArmor = tank.turretRearArmor;
+        }
+
+        if (partThatWasHit.Contains("Track"))
+        {
+            frontArmor = tank.tracksArmor;
+            sideArmor = tank.tracksArmor;
+            rearArmor = tank.tracksArmor;
+        }
+
+        if (partThatWasHit.Contains("TankGun"))
+        {
+            frontArmor = tank.gunArmor;
+            sideArmor = tank.gunArmor;
+            rearArmor = tank.gunArmor;
+        }        
+
+        int[] partArmor = new int[3];
+        partArmor[0] = frontArmor;
+        partArmor[1] = sideArmor;
+        partArmor[2] = rearArmor;
+
+        return partArmor;
+            
+    }
+    
+
+
+
+   
+
+
+
+
+
+    #endregion
+
+
 }

@@ -6,7 +6,8 @@ using UnityEngine;
 [System.Serializable]
 public class TankClass
 {
-    [SerializeField] public float weight;
+    [SerializeField] public int weight;
+    [SerializeField] public int hitPoints;
 
     [Header("Speed Values")]
     [SerializeField] public float forwardSpeed;
@@ -31,14 +32,32 @@ public class TankClass
     [Header("Gun Damage Control")]
     //addArmor here, damage and all that stuff when you implement it.
     [SerializeField] public GameObject mainGunProjectile;
-    [SerializeField] public float mGProjectileVelocity;
-    [SerializeField] public float mainGunDamage;
-    [SerializeField] public float mGReloadSpeed;
-    [SerializeField] public float mGMagazineSize;
-    [SerializeField] public float mGMinimumPenetration;
-    [SerializeField] public float mGGunMaximumPenetration;
-    [SerializeField] public float hitPoints;
+    [SerializeField] public int mGProjectileVelocity;
+    [SerializeField] public int mGDamage;
+    [SerializeField] public int mGReloadSpeed;
+    [SerializeField] public int mGMagazineSize;
+    [SerializeField] public int mGMinPenetration;
+    [SerializeField] public int mGGunMaxPenetration;
+    [Space(10)]
 
-   
+    [Header("Chassis armor")]
+    [Space(2)]
+    [Header("Armor values")]
+    [SerializeField] public int chassisFrontArmor;
+    [SerializeField] public int chassisSideArmor;
+    [SerializeField] public int chassisRearArmor;
+    [Space(2)]
+    [Header("Turret armor")]
+    [SerializeField] public int turretFrontArmor;
+    [SerializeField] public int turretSideArmor;
+    [SerializeField] public int turretRearArmor;
+    [Space(2)]
+    [Header("Other armor")]
+    [SerializeField] public int tracksArmor;
+    [SerializeField] public int gunArmor;
+
+
+
+
 
 }
