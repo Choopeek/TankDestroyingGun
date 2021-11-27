@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class Tank : MonoBehaviour
 {
     private Scroll_Track trackLeft;
@@ -25,14 +26,19 @@ public class Tank : MonoBehaviour
     public TankClass tank = new TankClass();
     public CombatSystem combatSystem = new CombatSystem();
 
+    public ParticleCatalogue particleCatalogue = new ParticleCatalogue();
+    ParticleHandler particleHandler;
 
+    
     private void Start()
     {
         HandleModel(); //in this function we make all that stuff that is usually made in START method;        
         HandleProjectile();
+        HandleVFX();
+        
     }
 
-    #region Handling A Tank //setting up so the model would work
+    #region Handling A Tank //setting up so the model would work (components, scripts, etc)
     void HandleModel()
     {
         //setting Childs and adding Scripts to tracks
@@ -58,6 +64,12 @@ public class Tank : MonoBehaviour
     {
         playerCM = GameObject.Find("Player").GetComponent<PlayerCombatModule>();
         tank.mainGunProjectile = playerCM.projectileForEnemy;
+    }
+
+    void HandleVFX()
+    {
+        particleHandler = this.gameObject.AddComponent<ParticleHandler>();
+
     }
 
     #endregion
@@ -168,7 +180,10 @@ public class Tank : MonoBehaviour
         projectileSCR.whoShot = this.gameObject;
         projectileSCR.penetration = combatSystem.projectilePenetrationValue(tank.mGMinPenetration, tank.mGGunMaxPenetration);
         projectileSCR.damage = tank.mGDamage;
+
         
+        
+        particleHandler.SpawnParticle(particleCatalogue.shootSmokeMainGun, shootPos.position, shootPos.rotation);
     }
 
     //checks whenever the gun is in bounds of the Angles; If so - it changes the variables, so the gun can't be moved up or down anymore;
@@ -204,18 +219,18 @@ public class Tank : MonoBehaviour
 
     #region CombatMechanic
     
-   
-
-    public void Hit(GameObject target, GameObject whoShot, string partThatWasHit, int projectileDamage, int projectilePenetration)
+    public void Hit(GameObject target, GameObject whoShot, string partThatWasHit, int projectileDamage, int projectilePenetration, Vector3 hitCoordinates, ParticleSystem penetrationParticle, ParticleSystem notPenetratedParticle)
     {
         int[] armorValues = ArmorThicknessThatWasHit(partThatWasHit);
 
         if (combatSystem.GotHit(target, whoShot, projectilePenetration, armorValues))
         {
+            particleHandler.SpawnParticle(penetrationParticle, hitCoordinates, penetrationParticle.transform.rotation);
             TakeDamage(projectileDamage);
         }
         else
         {
+            particleHandler.SpawnParticle(notPenetratedParticle, hitCoordinates, notPenetratedParticle.transform.rotation);
             return;
         }
     }
@@ -225,6 +240,7 @@ public class Tank : MonoBehaviour
         tank.hitPoints = tank.hitPoints - damage;
     }
 
+    //returns the array of armorValues
     int[] ArmorThicknessThatWasHit(string partThatWasHit)
     {
         int frontArmor = 0;
@@ -267,15 +283,15 @@ public class Tank : MonoBehaviour
         return partArmor;
             
     }
+
+
+    #endregion
+
+    #region Video effects
+
     
 
-
-
-   
-
-
-
-
+    
 
     #endregion
 

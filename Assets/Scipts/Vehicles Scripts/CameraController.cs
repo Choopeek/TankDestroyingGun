@@ -10,8 +10,8 @@ public class CameraController : MonoBehaviour
 
     void Start()
     {
-        player = GameObject.Find("Player").GetComponent<PlayerTankController>();
-        cinemachineCam = GetComponent<CinemachineFreeLook>();
+        player = GameObject.Find("Player").GetComponent<PlayerTankController>();     
+        
         cinemachineCam.Follow = player.playerTank.transform;
         cinemachineCam.LookAt = player.playerTank.transform;
 
