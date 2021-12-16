@@ -6,12 +6,15 @@ using UnityEngine;
 
 public class Tank : MonoBehaviour
 {
+    GameObject trackLeftGO;
+    GameObject trackRightGO;
     private Scroll_Track trackLeft;
     private Scroll_Track trackRight;
 
+    public GameObject chassis;
     public GameObject turret;
-    [SerializeField] GameObject gun;
-    GameObject gunEdge;    
+    [SerializeField] public  GameObject gun;
+    public GameObject gunEdge;    
     PlayerCombatModule playerCM;
     
     
@@ -29,6 +32,9 @@ public class Tank : MonoBehaviour
     public ParticleCatalogue particleCatalogue = new ParticleCatalogue();
     ParticleHandler particleHandler;
 
+
+    public Material material;
+
     
     private void Start()
     {
@@ -42,6 +48,9 @@ public class Tank : MonoBehaviour
     void HandleModel()
     {
         //setting Childs and adding Scripts to tracks
+        chassis = this.transform.gameObject;
+        trackLeftGO = this.transform.GetChild(0).gameObject;
+        trackRightGO = this.transform.GetChild(1).gameObject;
         this.transform.GetChild(0).gameObject.AddComponent<Scroll_Track>();
         this.transform.GetChild(1).gameObject.AddComponent<Scroll_Track>();
         trackLeft = this.transform.GetChild(0).GetComponent<Scroll_Track>();
@@ -238,7 +247,45 @@ public class Tank : MonoBehaviour
     void TakeDamage(int damage)
     {
         tank.hitPoints = tank.hitPoints - damage;
+        if (tank.hitPoints <= 0)
+        {
+            DestroyTank();
+        }
+    } 
+
+    private void DestroyTank()
+    {
+        SetMaterialOnDeath();
+         
+
+
+
     }
+
+    void SetMaterialOnDeath()
+    {
+        Material chassisNewMaterial;
+        Material trackLeftNewMaterial;
+        Material trackRightNewMaterial;
+        Material turretNewMaterial;
+        Material gunNewMaterial;
+
+        chassisNewMaterial = this.gameObject.GetComponent<MeshRenderer>().material;
+        trackLeftNewMaterial = this.trackLeftGO.GetComponent<MeshRenderer>().material;
+        trackRightNewMaterial = this.trackRightGO.GetComponent<MeshRenderer>().material;
+        turretNewMaterial = this.turret.GetComponent<MeshRenderer>().material;
+        gunNewMaterial = this.gun.GetComponent<MeshRenderer>().material;
+
+        chassisNewMaterial.color = new Color(0, 0, 0);
+        trackLeftNewMaterial.color = new Color(0, 0, 0);
+        trackRightNewMaterial.color = new Color(0, 0, 0);
+        turretNewMaterial.color = new Color(0, 0, 0);
+        gunNewMaterial.color = new Color(0, 0, 0);
+
+        
+    }
+
+    
 
     //returns the array of armorValues
     int[] ArmorThicknessThatWasHit(string partThatWasHit)
@@ -295,5 +342,21 @@ public class Tank : MonoBehaviour
 
     #endregion
 
+    //small method to know if smth happened in percents chance
+   public bool DidItHappened(int percentChance) 
+    {
+        int chance = UnityEngine.Random.Range(0, 101);
+        if (percentChance >= chance)
+        {
+            Debug.Log("It happened, the chance was " + percentChance);
+            return true;
+        }
+        else
+        {
+            Debug.Log("it did not happened, the chance was " + percentChance);
+            return false;
+        }
+
+    }
 
 }

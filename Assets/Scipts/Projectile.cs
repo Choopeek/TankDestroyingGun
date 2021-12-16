@@ -50,11 +50,28 @@ public class Projectile : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        Vector3 hitCoordinates;
+        hitCoordinates = collision.GetContact(0).point;
+
+        NavigationManagerAgent botIsShooting;
+        try
+        {
+            botIsShooting = whoShot.GetComponent<NavigationManagerAgent>();
+            
+        }
+        catch (System.Exception)
+        {
+            Debug.Log("Something is wrong in the projectile method. OnColisionEnter ");
+            throw;
+        }
+
         
 
         //turret and chassis have different armor values. So here we help the projectile to know - what was hit. And pass this info to Targets script. And based on that knowledge - it will pass the correct armor values;
         if (collision.gameObject.tag.Contains("Tank"))
         {
+            
+
             if (collision.gameObject.tag.Contains("Chassis"))
             {
                 targetTankSCR = collision.gameObject.GetComponent<Tank>();
@@ -63,23 +80,36 @@ public class Projectile : MonoBehaviour
             else
             {
                 targetTankSCR = collision.gameObject.GetComponentInParent<Tank>();
+                
+                
             }
 
             target = collision.gameObject;
             partThatWasHit = collision.gameObject.tag;
-            Vector3 hitCoordinates;
-            hitCoordinates = collision.contacts[0].point;
+            
 
             targetTankSCR.Hit(target, whoShot, partThatWasHit, damage, penetration, hitCoordinates, penetrationParticle, notPenetratedParticle);
+            try
+            {
+                botIsShooting.objectThatWasHit = targetTankSCR.chassis;
+            }
+            catch
+            {
+                Debug.Log("exception in OnColisionEnter   if (collision.gameObject.tag.Contains(Tank))");
+                throw;
+            }
 
         }
 
+        if (botIsShooting != null)
+        {
+
+            botIsShooting.hitCoordinates = hitCoordinates;
+            botIsShooting.awaitingExplosionCoordinates = false;
+        }
 
         if (collision.gameObject.CompareTag("Untagged"))
-        {
-            Debug.Log("Hit an UNTAGGED obj");
-            Vector3 hitCoordinates;
-            hitCoordinates = collision.contacts[0].point;
+        {         
             particleHandler.SpawnParticle(penetrationParticle, hitCoordinates, transform.rotation);
         }
 

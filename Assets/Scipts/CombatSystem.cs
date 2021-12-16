@@ -15,17 +15,11 @@ public class CombatSystem
         int armor = GetArmorValue(armorValues, angleBetween);
         if (WasPenetrated(armor, projectilePenetration))
         {
-            Debug.Log("Penetrated");
             return true;
-
-            
         }
         else
-        {
-            Debug.Log("Not penetrated");
-            return false;
-            
-
+        {            
+            return false; 
         }
 
 
@@ -57,22 +51,16 @@ public class CombatSystem
         int armor = 0;
 
         if (angleBetween <= 45)
-        {
-            Debug.Log("Hit in front");
-            armor = armorValues[0];
-            
+        {           
+            armor = armorValues[0];            
         }
         if (angleBetween > 45 & angleBetween <= 135)
-        {
-            Debug.Log("Hit in side");
-            armor = armorValues[1];
-            
+        {            
+            armor = armorValues[1];            
         }
         if (angleBetween > 135)
         {
-            Debug.Log("Hit in back");
-            armor = armorValues[2];
-            
+            armor = armorValues[2];           
         }
 
         return armor;

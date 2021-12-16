@@ -32,27 +32,22 @@ public class NavigationManagerScript : MonoBehaviour
         
     }
 
+
+    //before creating new tankToMove or anything else - trigger method SendWaypointList(), and after it StartMovement(); So the tank will start moving;
+    void SendWaypointList()
+    {
+        controlledTankNavAgent.waypointList = new List<Transform>(waypointList);
+    }
+
+    void StartMovement()
+    {
+        StartCoroutine(controlledTankNavAgent.FollowThePathCor());
+    }
+
     
 
 
 
-    private void Update()
-    {
-        if (Input.GetKeyUp(KeyCode.P))
-        {
-            if (tankToMove == null)
-            {
-                return;
-            }
-            controlledTankNavAgent.waypointList = new List<Transform>(waypointList);
-            StartCoroutine(controlledTankNavAgent.FollowThePathCor());
-        }
-
-        if (Input.GetKeyUp(KeyCode.L))
-        {
-            GetScript();
-            Debug.Log("Button L pressed");
-        }
-    }
+    
 
 }

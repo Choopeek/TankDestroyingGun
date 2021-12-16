@@ -10,6 +10,21 @@ public class NavigationManagerAgent : MonoBehaviour
     public GameObject tankToMove;
     Tank controlledTank;
 
+    public GameObject target;
+    GameObject turret;
+    GameObject gun;
+
+    public bool awaitingExplosionCoordinates;
+    public bool awaitingGunAdjustment;
+    public Vector3 hitCoordinates;
+    public GameObject objectThatWasHit;
+
+    float gunVerticalAdjustmentUpperBond = 90f;
+    float gunVerticalAdjustmentLowerBond = 82f;
+
+    float horizontalAdjustmentUpperBond = 90.9f;
+    float horizontalAdjustmentLowerBond = 89.9f;
+
     public void GetScript()
     {
         if (tankToMove == null)
@@ -17,7 +32,9 @@ public class NavigationManagerAgent : MonoBehaviour
             Debug.Log("NoTankToControll");
             return;
         }
-        controlledTank = tankToMove.GetComponent<Tank>();        
+        controlledTank = tankToMove.GetComponent<Tank>();
+        turret = controlledTank.turret;
+        gun = controlledTank.gun;
     }
 
 
@@ -45,28 +62,7 @@ public class NavigationManagerAgent : MonoBehaviour
 
 
 
-    void RotateTowards(Transform from, Transform to)
-    {
-
-
-
-
-        if (!IsRotatedAtPoint(from, to))
-        {
-            float speed = 1 * Time.deltaTime;
-            Vector3 targetPos = to.position - from.position;
-            Vector3 newRotation = Vector3.RotateTowards(tankToMove.transform.forward, targetPos, speed, 0f);
-            tankToMove.transform.rotation = Quaternion.LookRotation(newRotation);
-        }
-        else
-        {
-
-            return;
-        }
-
-
-    }
-
+   
     void RotateTowardsVersion2(Transform objectToMove, Transform targetObject)
     {
         float angle = GetAngleRight(objectToMove, targetObject);
@@ -82,7 +78,7 @@ public class NavigationManagerAgent : MonoBehaviour
             //rotateLeft
         }
 
-        if (angle >= 89 && angle <= 91)
+        if (angle >= horizontalAdjustmentLowerBond && angle <= horizontalAdjustmentUpperBond)
         {
             //isRotated
             Debug.Log("IsRotated");
@@ -90,28 +86,10 @@ public class NavigationManagerAgent : MonoBehaviour
 
     }
 
-
-
-    bool IsRotatedAtPoint(Transform from, Transform to)
-    {
-        float rotationDifference = GetRotationDifference(from, to);
-
-        if (rotationDifference > 0.999f)
-        {
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-
-    }
-
     bool IsRotatedAtPointVersion2(Transform angleFrom, Transform angleTo)
     {
         float angle = GetAngleRight(angleFrom, angleTo);
-        if (angle >= 89 && angle <= 91)
+        if (angle >= horizontalAdjustmentLowerBond && angle <= horizontalAdjustmentUpperBond)
         {
             return true;
         }
@@ -171,11 +149,72 @@ public class NavigationManagerAgent : MonoBehaviour
 
     #endregion
 
+    #region AimingMethods
+
+    void RotateTurret()
+    {        
+            float angle = GetAngleRight(turret.transform, target.transform);
+            if (angle > 90)
+            {
+                controlledTank.RotateTurretLeft(false);
+                //rotateRight
+            }
+
+            if (angle < 90)
+            {
+                controlledTank.RotateTurretLeft(true);
+                //rotateLeft
+            }
+
+            if (angle >= horizontalAdjustmentLowerBond && angle <= horizontalAdjustmentUpperBond)
+            {
+                //isRotated
+                Debug.Log("IsRotated");
+            }        
+    }
+
+    void ElevateGun(bool moveGunUp)
+    {
+        if (moveGunUp)
+        {
+            controlledTank.MoveGunUp(true);
+        }
+
+        if (!moveGunUp)
+        {
+            controlledTank.MoveGunUp(false);
+        }
+    }
+
+    bool GunIsOnTarget()
+    {
+       float angleBetween = GetAngleForGun();
+        if (angleBetween < gunVerticalAdjustmentUpperBond & angleBetween > gunVerticalAdjustmentLowerBond)
+        {
+            
+            return true;
+        }
+        else
+        {
+            
+            return false;
+        }
+    }
+
+    float GetAngleForGun()
+    {
+               
+        Vector3 targetDir = gun.transform.position - target.transform.position;
+        float angle = Vector3.Angle(targetDir, gun.transform.up);        
+        return angle;
+    }
+
+    #endregion
 
 
-    
-
-    #region Couroutine Workflow
+    //here all the movement works. The Tank will rotate and move towards all waypoints that are in his waypointList. After it - it stops.
+    //eventually I got rid of Task Workflow, cause I did not want to mess with the cancelattion tokens. And now we stick with Couroutines.
+    #region Couroutine Movement Workflow
     IEnumerator RotateAndMoveCor(Transform moveFrom, Transform moveTo)
     {
 
@@ -202,8 +241,7 @@ public class NavigationManagerAgent : MonoBehaviour
     {
         if (!WaypointToMoveTo())
         {
-            Debug.Log("reachedFinalDestination");
-            Destroy(this);
+            Debug.Log("reachedFinalDestination");            
             yield return null;
 
         }
@@ -218,7 +256,7 @@ public class NavigationManagerAgent : MonoBehaviour
     }
     #endregion
 
-    #region Task Workflow
+    #region Task Movement Workflow
 
     //in task workflow I did not plant any cancelation tokens. Its better for you to do so.
     async Task RotateAndMove(Transform moveFrom, Transform moveTo)
@@ -255,6 +293,162 @@ public class NavigationManagerAgent : MonoBehaviour
         }
     }
     #endregion
+
+    #region Couroutine Aim Workflow
+    IEnumerator RotateTurretAndAimAtTarget()
+    {
+        while (!IsRotatedAtPointVersion2(turret.transform, target.transform))
+        {
+            RotateTurret();
+            yield return null;
+        }
+        Debug.Log("finished rotating a turret");
+    }
+
+    //use ElevateGunOnTarget() only when aiming for the first time
+    IEnumerator ElevateGunOnTarget()
+    {
+        
+        while(!GunIsOnTarget())
+        {
+            if (GetAngleForGun() > gunVerticalAdjustmentUpperBond )
+            {
+                ElevateGun(true);
+            }
+            else
+            {
+                ElevateGun(false);
+            }
+            yield return null;
+        }
+        
+    }
+
+    IEnumerator ShootAtTargetAndMakeAdjustments()
+    {
+        awaitingExplosionCoordinates = false;
+        controlledTank.FireMainGun();
+        objectThatWasHit = null;
+        awaitingExplosionCoordinates = true;        
+        
+        //add timer to await reloading a gun;
+        while (awaitingExplosionCoordinates)
+        {
+            yield return null;
+        }
+
+        if (WasTheTargetHit())
+        {
+            Debug.Log("I've hit the target");
+            yield break;
+
+        }
+        
+        
+        Debug.Log("received coordinates making adjustment");
+
+        float angleBeforeAdjustment = GetAngleForGun();
+        float angleAfterAdjustment = GetGunAdjustmentValue(angleBeforeAdjustment);
+
+        awaitingGunAdjustment = true;
+
+        StartCoroutine(ApplyGunAdjustment(angleBeforeAdjustment, angleAfterAdjustment));
+
+        while (awaitingGunAdjustment)
+        {
+            yield return null;
+        }
+
+        Debug.Log("Finished applying gun adjustments");
+
+    }
+
+    IEnumerator ApplyGunAdjustment(float angleBeforeAdjustment, float angleAfterAdjustment) 
+    {
+        Debug.Log("Starting ApplyGunAdjustment");
+
+
+        if (angleBeforeAdjustment > angleAfterAdjustment)
+        {
+            Debug.Log("Adjustig gun UP");
+            while (GetAngleForGun() > angleAfterAdjustment)
+            {
+                Debug.Log("going to WHILE UP sequence");
+                ElevateGun(true);                
+                
+            }
+            Debug.Log("Finished adjustig gun UP");
+            awaitingGunAdjustment = false;
+            yield break;
+            
+        }
+
+        if (angleBeforeAdjustment < angleAfterAdjustment)
+        {
+            Debug.Log("Adjusting gun down");
+            while (GetAngleForGun() < angleAfterAdjustment)
+            {
+                ElevateGun(false);
+                Debug.Log("going to WHILE DOWN sequence");
+            }
+            Debug.Log("Finished adjusting gun down");
+            awaitingGunAdjustment = false;
+            yield break;
+        }
+
+        
+
+
+       
+    }
+    float GetGunAdjustmentValue(float angleBeforeAdjustment)
+    {
+        float angleAfterAdjustment;
+        if (TooHigh())
+        {
+            angleAfterAdjustment = angleBeforeAdjustment + 1f;
+        }
+
+        else
+        {
+            angleAfterAdjustment = angleBeforeAdjustment - 1f;
+        }
+
+        return angleAfterAdjustment;
+    }
+
+
+    bool WasTheTargetHit()
+    {
+        if (objectThatWasHit == target)
+        {
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
+    }
+    bool TooHigh()
+    {
+        float distanceToExplosion = Vector3.Distance(tankToMove.transform.position, hitCoordinates);
+        float distanceToTarget = Vector3.Distance(tankToMove.transform.position, target.transform.position);
+        
+        if (distanceToExplosion > distanceToTarget)
+        {
+            Debug.Log("gun is too high");
+            return true;
+        }
+
+        else
+        {
+            Debug.Log("gun is too low");
+            return false;
+        }
+    }
+
+    #endregion
     bool WaypointToMoveTo() //checks if the waypoint list is empty or not
     {
         if (waypointList.Count == 0)
@@ -268,6 +462,33 @@ public class NavigationManagerAgent : MonoBehaviour
     }
 
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            Debug.Log("Test P pressed from NavManAgent");
+            GetScript();
+        }
 
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            Debug.Log("Test O pressed from NavManAgent");
+            StartCoroutine(RotateTurretAndAimAtTarget());
+
+        }
+
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            Debug.Log("Test I pressed from NavManAgent");
+            StartCoroutine(ShootAtTargetAndMakeAdjustments());
+        }
+
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            Debug.Log("Test U pressed from NavManAgent");
+            StartCoroutine(ElevateGunOnTarget());
+            
+        }
+    }
 
 }
