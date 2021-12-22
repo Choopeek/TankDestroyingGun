@@ -15,10 +15,12 @@ public class CombatSystem
         int armor = GetArmorValue(armorValues, angleBetween);
         if (WasPenetrated(armor, projectilePenetration))
         {
+            Debug.Log("Was penetrated");
             return true;
         }
         else
-        {            
+        {
+            Debug.Log("Was not penetrated");        
             return false; 
         }
 

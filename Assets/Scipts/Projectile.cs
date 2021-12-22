@@ -89,21 +89,27 @@ public class Projectile : MonoBehaviour
             
 
             targetTankSCR.Hit(target, whoShot, partThatWasHit, damage, penetration, hitCoordinates, penetrationParticle, notPenetratedParticle);
-            try
+            //ERRORS MIGHT BE HERE WITH THE NavigationManagerAgent
+            if (botIsShooting != null)
             {
-                botIsShooting.objectThatWasHit = targetTankSCR.chassis;
+                try
+                {
+                    botIsShooting.objectThatWasHit = targetTankSCR.chassis;
+                }
+                catch
+                {
+                    Debug.Log("exception in OnColisionEnter   if (collision.gameObject.tag.Contains(Tank))");
+                    throw;
+                }
             }
-            catch
-            {
-                Debug.Log("exception in OnColisionEnter   if (collision.gameObject.tag.Contains(Tank))");
-                throw;
-            }
+            
+
 
         }
 
         if (botIsShooting != null)
-        {
-
+        { //ERRORS MIGHT BE HERE WITH THE NavigationManagerAgent
+            
             botIsShooting.hitCoordinates = hitCoordinates;
             botIsShooting.awaitingExplosionCoordinates = false;
         }

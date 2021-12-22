@@ -370,14 +370,16 @@ public class NavigationManagerAgent : MonoBehaviour
 
         if (angleBeforeAdjustment > angleAfterAdjustment)
         {
-            Debug.Log("Adjustig gun UP");
+            Debug.Log("Adjusting gun UP");
             while (GetAngleForGun() > angleAfterAdjustment)
             {
-                Debug.Log("going to WHILE UP sequence");
-                ElevateGun(true);                
+                
+                ElevateGun(true);
+                //if you do not add the YIELD RETURN NULL; it will move the Gun instantly;
+                yield return null;
                 
             }
-            Debug.Log("Finished adjustig gun UP");
+            Debug.Log("Finished adjusting gun UP");
             awaitingGunAdjustment = false;
             yield break;
             
@@ -386,10 +388,12 @@ public class NavigationManagerAgent : MonoBehaviour
         if (angleBeforeAdjustment < angleAfterAdjustment)
         {
             Debug.Log("Adjusting gun down");
+
             while (GetAngleForGun() < angleAfterAdjustment)
             {
                 ElevateGun(false);
-                Debug.Log("going to WHILE DOWN sequence");
+                //if you do not add the YIELD RETURN NULL; it will move the Gun instantly;
+                yield return null;
             }
             Debug.Log("Finished adjusting gun down");
             awaitingGunAdjustment = false;
@@ -462,33 +466,6 @@ public class NavigationManagerAgent : MonoBehaviour
     }
 
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            Debug.Log("Test P pressed from NavManAgent");
-            GetScript();
-        }
-
-        if (Input.GetKeyDown(KeyCode.O))
-        {
-            Debug.Log("Test O pressed from NavManAgent");
-            StartCoroutine(RotateTurretAndAimAtTarget());
-
-        }
-
-        if (Input.GetKeyDown(KeyCode.I))
-        {
-            Debug.Log("Test I pressed from NavManAgent");
-            StartCoroutine(ShootAtTargetAndMakeAdjustments());
-        }
-
-        if (Input.GetKeyDown(KeyCode.U))
-        {
-            Debug.Log("Test U pressed from NavManAgent");
-            StartCoroutine(ElevateGunOnTarget());
-            
-        }
-    }
+    
 
 }

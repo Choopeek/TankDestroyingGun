@@ -87,7 +87,7 @@ public class Tank : MonoBehaviour
     #region Movement
     public void MoveTankForward()
     {
-        this.transform.Translate(Vector3.forward * this.tank.forwardSpeed * Time.deltaTime);
+        this.transform.Translate(Vector3.forward * this.tank.forwardSpeed * Time.deltaTime);        
         trackLeft.movingForward = true;
         trackRight.movingForward = true;
     }

@@ -13,7 +13,9 @@ public class PlayerTankController : MonoBehaviour
     [SerializeField] Vector3 tankPrecisionCamera;
     [SerializeField] CinemachineVirtualCameraBase thirdPersonCam;
     [SerializeField] CinemachineVirtualCameraBase aimCamera;
+    [SerializeField] CinemachineVirtualCamera aimCameraControls;
     bool aimCamEnabled = false;
+    [SerializeField] Camera mainCamera;
 
     [SerializeField] GameObject aimCamPoint;
 
@@ -24,6 +26,9 @@ public class PlayerTankController : MonoBehaviour
     [SerializeField] GameObject tankCrosshair;
     [SerializeField] GameObject hudTankTurretTurnMarker;
     [SerializeField] GameObject hudTankChassisTurnMarker;
+    bool handlingHUD;
+    int zoomValue = 0;
+    int zoomCameraRotationAdjustValue = 0;
 
     [SerializeField] int chanceOfHappening;
      
@@ -87,7 +92,7 @@ public class PlayerTankController : MonoBehaviour
             controlledTank.MoveGunUp(false);
         }
 
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if (Input.GetKeyUp(KeyCode.LeftShift) & !handlingHUD)
         {
             SwitchCamera();
         }
@@ -105,20 +110,21 @@ public class PlayerTankController : MonoBehaviour
         #endregion
 
         AllignGunAndAimCamera();
+        
 
 
         #region TestMethodsControls
 
         if (Input.GetKeyDown(KeyCode.P))
         {
-            //Debug.Log("Test P pressed");
+            Debug.Log("Test P pressed from Player Tank Controller");
             
         }
 
         if (Input.GetKeyDown(KeyCode.O))
         {
-            //Debug.Log("Test O pressed");
-            
+            Debug.Log("Test O pressed from Player Tank Controller");
+
         }
         #endregion
 
@@ -134,27 +140,32 @@ public class PlayerTankController : MonoBehaviour
 
     IEnumerator MakeHUDTransparent(bool makeHUDtransparent)
     {
+        handlingHUD = true;
         if (makeHUDtransparent)
         {
+            
             while (tankHUDCanvasGroup.alpha > 0)
             {
                 float value = tankHUDCanvasGroup.alpha;
                 tankHUDCanvasGroup.alpha = Mathf.Lerp(0, 1, 0);
                 yield return null;
             }
+            
         }
 
         if (!makeHUDtransparent)
         {
+            
             while (tankHUDCanvasGroup.alpha < 1)
             {
                 float value = tankHUDCanvasGroup.alpha;
                 tankHUDCanvasGroup.alpha = Mathf.Lerp(0, 1, value + Time.deltaTime);
                 yield return null;
             }
+            
         }
 
-        
+        handlingHUD = false;
         
 
     }
@@ -170,7 +181,7 @@ public class PlayerTankController : MonoBehaviour
             StartCoroutine(MakeHUDTransparent(false));
 
         }
-        else
+        if (!enable)
         {
             StartCoroutine(MakeHUDTransparent(true));
             tankCrosshair.gameObject.SetActive(false);
@@ -181,8 +192,9 @@ public class PlayerTankController : MonoBehaviour
     }
     private void AllignGunAndAimCamera()
     {
-        //making sure that crosshair alligns withgun
-        aimCamera.transform.rotation = controlledTank.gun.transform.rotation;
+        //making sure that crosshair alligns with gun
+        //aimCamera.transform.localEulerAngles = controlledTank.gun.transform.localEulerAngles;
+        aimCamera.transform.localEulerAngles = new Vector3(controlledTank.gun.transform.localEulerAngles.x + zoomCameraRotationAdjustValue, controlledTank.gun.transform.localEulerAngles.y, controlledTank.gun.transform.localEulerAngles.z);
         //show player where his turret is rotated
         hudTankTurretTurnMarker.transform.localEulerAngles = new Vector3(0, 0, -controlledTank.turret.gameObject.transform.localEulerAngles.y);
     }
@@ -192,10 +204,34 @@ public class PlayerTankController : MonoBehaviour
     {
         if (!aimCamEnabled)
         {
-            aimCamEnabled = true;
+            
             thirdPersonCam.Priority = 1;
             aimCamera.Priority = 2;
             EnableDisableHUD(true);
+            if (zoomValue == 0)
+            {
+                aimCameraControls.m_Lens.FieldOfView = 40;
+                zoomCameraRotationAdjustValue = 0;                
+                zoomValue = 1;
+                return;
+            }
+
+            if (zoomValue == 1)
+            {
+                aimCameraControls.m_Lens.FieldOfView = 20;
+                zoomCameraRotationAdjustValue = 2;                
+                zoomValue = 2;
+                return;
+            }
+
+            if (zoomValue == 2)
+            {
+                aimCameraControls.m_Lens.FieldOfView = 10;
+                zoomCameraRotationAdjustValue = 3;                
+                zoomValue = 0;
+                aimCamEnabled = true;
+            }
+
             Debug.Log("Switch to AIM");
         }
         else
@@ -203,9 +239,16 @@ public class PlayerTankController : MonoBehaviour
             aimCamEnabled = false;
             thirdPersonCam.Priority = 2;
             aimCamera.Priority = 1;
+            zoomValue = 0;
             EnableDisableHUD(false);
             Debug.Log("Switch to 3d Person");
         }
+    }
+
+    void ChangeCameraRotationOnZoom()
+    {
+        //it should mess with mainCamera;
+        mainCamera.transform.localEulerAngles = new Vector3(mainCamera.transform.localEulerAngles.x + zoomCameraRotationAdjustValue, mainCamera.transform.localEulerAngles.y, mainCamera.transform.localEulerAngles.z);
     }
     void CODESAVER()
     {
