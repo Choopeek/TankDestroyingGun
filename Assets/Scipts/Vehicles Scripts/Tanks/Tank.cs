@@ -255,11 +255,7 @@ public class Tank : MonoBehaviour
 
     private void DestroyTank()
     {
-        SetMaterialOnDeath();
-         
-
-
-
+        SetMaterialOnDeath();         
     }
 
     void SetMaterialOnDeath()

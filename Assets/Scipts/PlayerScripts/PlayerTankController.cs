@@ -245,11 +245,7 @@ public class PlayerTankController : MonoBehaviour
         }
     }
 
-    void ChangeCameraRotationOnZoom()
-    {
-        //it should mess with mainCamera;
-        mainCamera.transform.localEulerAngles = new Vector3(mainCamera.transform.localEulerAngles.x + zoomCameraRotationAdjustValue, mainCamera.transform.localEulerAngles.y, mainCamera.transform.localEulerAngles.z);
-    }
+    
     void CODESAVER()
     {
         //just put here all the code you don't want to delete right now and its too long to comment all lines.

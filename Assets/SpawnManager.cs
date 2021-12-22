@@ -29,7 +29,7 @@ public class SpawnManager : MonoBehaviour
 
     void SpawnWave ()
     {
-        for (int i = 0; i < spawnPrefabListLenght; i++)
+        for (int i = 0; i < spawnPoint.Capacity; i++)
         {
             int objectToSpawn = SelectObjectToSpawn();
             Instantiate(spawnPrefabList[objectToSpawn], spawnPoint[i].transform.position, spawnPrefabList[objectToSpawn].transform.rotation);
