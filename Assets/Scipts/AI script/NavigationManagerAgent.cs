@@ -18,6 +18,10 @@ public class NavigationManagerAgent : MonoBehaviour
     public bool awaitingGunAdjustment;
     public Vector3 hitCoordinates;
     public GameObject objectThatWasHit;
+    Vector3 targetCoordinates;
+    
+
+    bool readyToFire;
 
     float gunVerticalAdjustmentUpperBond = 90f;
     float gunVerticalAdjustmentLowerBond = 82f;
@@ -60,9 +64,6 @@ public class NavigationManagerAgent : MonoBehaviour
 
     }
 
-
-
-   
     void RotateTowardsVersion2(Transform objectToMove, Transform targetObject)
     {
         float angle = GetAngleRight(objectToMove, targetObject);
@@ -152,25 +153,25 @@ public class NavigationManagerAgent : MonoBehaviour
     #region AimingMethods
 
     void RotateTurret()
-    {        
-            float angle = GetAngleRight(turret.transform, target.transform);
-            if (angle > 90)
-            {
-                controlledTank.RotateTurretLeft(false);
-                //rotateRight
-            }
+    {
+        float angle = GetAngleRight(turret.transform, target.transform);
+        if (angle > 90)
+        {
+            controlledTank.RotateTurretLeft(false);
+            //rotateRight
+        }
 
-            if (angle < 90)
-            {
-                controlledTank.RotateTurretLeft(true);
-                //rotateLeft
-            }
+        if (angle < 90)
+        {
+            controlledTank.RotateTurretLeft(true);
+            //rotateLeft
+        }
 
-            if (angle >= horizontalAdjustmentLowerBond && angle <= horizontalAdjustmentUpperBond)
-            {
-                //isRotated
-                Debug.Log("IsRotated");
-            }        
+        if (angle >= horizontalAdjustmentLowerBond && angle <= horizontalAdjustmentUpperBond)
+        {
+            //isRotated
+            Debug.Log("IsRotated");
+        }
     }
 
     void ElevateGun(bool moveGunUp)
@@ -188,25 +189,72 @@ public class NavigationManagerAgent : MonoBehaviour
 
     bool GunIsOnTarget()
     {
-       float angleBetween = GetAngleForGun();
+        float angleBetween = GetAngleForGun();
         if (angleBetween < gunVerticalAdjustmentUpperBond & angleBetween > gunVerticalAdjustmentLowerBond)
         {
-            
+
             return true;
         }
         else
         {
-            
+
             return false;
         }
     }
 
     float GetAngleForGun()
     {
-               
+
         Vector3 targetDir = gun.transform.position - target.transform.position;
-        float angle = Vector3.Angle(targetDir, gun.transform.up);        
+        float angle = Vector3.Angle(targetDir, gun.transform.up);
         return angle;
+    }
+
+    float GetGunAdjustmentValue(float angleBeforeAdjustment)
+    {
+        float angleAfterAdjustment;
+        if (TooHigh())
+        {
+            angleAfterAdjustment = angleBeforeAdjustment + 1f;
+        }
+
+        else
+        {
+            angleAfterAdjustment = angleBeforeAdjustment - 1f;
+        }
+
+        return angleAfterAdjustment;
+    }
+
+
+    bool WasTheTargetHit()
+    {
+        if (objectThatWasHit == target)
+        {
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
+    }
+    bool TooHigh()
+    {
+        float distanceToExplosion = Vector3.Distance(tankToMove.transform.position, hitCoordinates);
+        float distanceToTarget = Vector3.Distance(tankToMove.transform.position, target.transform.position);
+
+        if (distanceToExplosion > distanceToTarget)
+        {
+            Debug.Log("gun is too high");
+            return true;
+        }
+
+        else
+        {
+            Debug.Log("gun is too low");
+            return false;
+        }
     }
 
     #endregion
@@ -241,7 +289,8 @@ public class NavigationManagerAgent : MonoBehaviour
     {
         if (!WaypointToMoveTo())
         {
-            Debug.Log("reachedFinalDestination");            
+            Debug.Log("reachedFinalDestination");
+            StartCoroutine(KillModeActivated());
             yield return null;
 
         }
@@ -303,15 +352,16 @@ public class NavigationManagerAgent : MonoBehaviour
             yield return null;
         }
         Debug.Log("finished rotating a turret");
+        readyToFire = true;
     }
 
     //use ElevateGunOnTarget() only when aiming for the first time
     IEnumerator ElevateGunOnTarget()
     {
-        
-        while(!GunIsOnTarget())
+
+        while (!GunIsOnTarget())
         {
-            if (GetAngleForGun() > gunVerticalAdjustmentUpperBond )
+            if (GetAngleForGun() > gunVerticalAdjustmentUpperBond)
             {
                 ElevateGun(true);
             }
@@ -321,7 +371,7 @@ public class NavigationManagerAgent : MonoBehaviour
             }
             yield return null;
         }
-        
+        readyToFire = true;
     }
 
     IEnumerator ShootAtTargetAndMakeAdjustments()
@@ -329,8 +379,8 @@ public class NavigationManagerAgent : MonoBehaviour
         awaitingExplosionCoordinates = false;
         controlledTank.FireMainGun();
         objectThatWasHit = null;
-        awaitingExplosionCoordinates = true;        
-        
+        awaitingExplosionCoordinates = true;
+
         //add timer to await reloading a gun;
         while (awaitingExplosionCoordinates)
         {
@@ -340,11 +390,12 @@ public class NavigationManagerAgent : MonoBehaviour
         if (WasTheTargetHit())
         {
             Debug.Log("I've hit the target");
+            StartCoroutine(ShootAtTargetAndMakeAdjustments());
             yield break;
 
         }
-        
-        
+
+
         Debug.Log("received coordinates making adjustment");
 
         float angleBeforeAdjustment = GetAngleForGun();
@@ -361,9 +412,18 @@ public class NavigationManagerAgent : MonoBehaviour
 
         Debug.Log("Finished applying gun adjustments");
 
+        if (HaveTargetMoved(targetCoordinates, target.transform))
+        {
+            StartCoroutine(KillModeActivated());
+            Debug.Log("Target moved restarting sequence");
+            yield break;
+        }
+
+        StartCoroutine(ShootAtTargetAndMakeAdjustments());
+
     }
 
-    IEnumerator ApplyGunAdjustment(float angleBeforeAdjustment, float angleAfterAdjustment) 
+    IEnumerator ApplyGunAdjustment(float angleBeforeAdjustment, float angleAfterAdjustment)
     {
         Debug.Log("Starting ApplyGunAdjustment");
 
@@ -373,16 +433,16 @@ public class NavigationManagerAgent : MonoBehaviour
             Debug.Log("Adjusting gun UP");
             while (GetAngleForGun() > angleAfterAdjustment)
             {
-                
+
                 ElevateGun(true);
                 //if you do not add the YIELD RETURN NULL; it will move the Gun instantly;
                 yield return null;
-                
+
             }
             Debug.Log("Finished adjusting gun UP");
             awaitingGunAdjustment = false;
             yield break;
-            
+
         }
 
         if (angleBeforeAdjustment < angleAfterAdjustment)
@@ -400,58 +460,80 @@ public class NavigationManagerAgent : MonoBehaviour
             yield break;
         }
 
+
+
+
+
+    }
+
+    IEnumerator KillModeActivated()
+    {
+        readyToFire = false;
+        targetCoordinates = target.transform.position;
+        StartCoroutine(RotateTurretAndAimAtTarget());
+
+        while (!readyToFire)
+        {
+            yield return null;
+        }
+
+        if (HaveTargetMoved(targetCoordinates, target.transform))
+        {
+            StartCoroutine(KillModeActivated());
+            Debug.Log("Target moved restarting sequence");
+            yield break;
+        }
+
+        readyToFire = false;
+
+        StartCoroutine(ElevateGunOnTarget());
+
+        while (!readyToFire)
+        {
+            yield return null;
+        }
+
+        if (HaveTargetMoved(targetCoordinates, target.transform))
+        {
+            StartCoroutine(KillModeActivated());
+            Debug.Log("Target moved restarting sequence");
+            yield break;
+        }
+
+        readyToFire = false;
+
+        StartCoroutine(ShootAtTargetAndMakeAdjustments());
+
+        while (!readyToFire)
+        {
+            yield return null;
+        }
+
         
 
 
-       
-    }
-    float GetGunAdjustmentValue(float angleBeforeAdjustment)
-    {
-        float angleAfterAdjustment;
-        if (TooHigh())
-        {
-            angleAfterAdjustment = angleBeforeAdjustment + 1f;
-        }
 
-        else
-        {
-            angleAfterAdjustment = angleBeforeAdjustment - 1f;
-        }
-
-        return angleAfterAdjustment;
+        yield return null;
     }
 
-
-    bool WasTheTargetHit()
+    bool HaveTargetMoved(Vector3 targetOldCoordinates, Transform targetNewCoordinates)
     {
-        if (objectThatWasHit == target)
-        {
-            return true;
-        }
+        //later on, here you might want to implement a mechanism to make adjustments on moving targets.
 
-        else
+        float distance = Vector3.Distance(targetCoordinates, targetNewCoordinates.position);
+
+        if ( distance <= 3)
         {
+            Debug.Log("Target did not move");
             return false;
         }
-    }
-    bool TooHigh()
-    {
-        float distanceToExplosion = Vector3.Distance(tankToMove.transform.position, hitCoordinates);
-        float distanceToTarget = Vector3.Distance(tankToMove.transform.position, target.transform.position);
-        
-        if (distanceToExplosion > distanceToTarget)
-        {
-            Debug.Log("gun is too high");
-            return true;
-        }
 
         else
         {
-            Debug.Log("gun is too low");
-            return false;
+            Debug.Log("Target moved");
+            return true;
         }
     }
-
     #endregion
     bool WaypointToMoveTo() //checks if the waypoint list is empty or not
     {

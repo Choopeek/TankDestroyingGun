@@ -232,6 +232,7 @@ MonoBehaviour:
   tank:
     weight: 14000
     hitPoints: 100
+    scoreValue: 80
     forwardSpeed: 5
     backwardSpeed: 5
     turnSpeed: 40

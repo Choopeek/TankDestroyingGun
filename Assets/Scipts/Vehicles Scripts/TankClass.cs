@@ -8,6 +8,7 @@ public class TankClass
 {
     [SerializeField] public int weight;
     [SerializeField] public int hitPoints;
+    [SerializeField] public int scoreValue;
 
     [Header("Speed Values")]
     [SerializeField] public float forwardSpeed;

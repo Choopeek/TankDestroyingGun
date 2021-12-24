@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class Tank : MonoBehaviour
 {
+    GameManager gameManager;
     GameObject trackLeftGO;
     GameObject trackRightGO;
     private Scroll_Track trackLeft;
@@ -35,12 +36,15 @@ public class Tank : MonoBehaviour
 
     public Material material;
 
+
+
     
     private void Start()
     {
         HandleModel(); //in this function we make all that stuff that is usually made in START method;        
         HandleProjectile();
         HandleVFX();
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
         
     }
 
@@ -87,15 +91,21 @@ public class Tank : MonoBehaviour
     #region Movement
     public void MoveTankForward()
     {
+        if (!IsAlive())
+        {
+            return;
+        }
         this.transform.Translate(Vector3.forward * this.tank.forwardSpeed * Time.deltaTime);        
         trackLeft.movingForward = true;
         trackRight.movingForward = true;
     }
 
-    
-
     public void MoveTankBackwards()
     {
+        if (!IsAlive())
+        {
+            return;
+        }
         this.transform.Translate(Vector3.back * this.tank.backwardSpeed * Time.deltaTime);
         trackLeft.movingBackward = true;
         trackRight.movingBackward = true;
@@ -103,11 +113,16 @@ public class Tank : MonoBehaviour
 
     public void StopTracks()
     {
+        
         trackRight.StoppedMoving();
         trackLeft.StoppedMoving();
     }
     public void RotateTankLeft(bool rotateLeft)
     {
+        if (!IsAlive())
+        {
+            return;
+        }
         if (rotateLeft)
         {
             this.transform.Rotate(0f, -this.tank.turnSpeed * Time.deltaTime, 0f, Space.Self);
@@ -127,6 +142,10 @@ public class Tank : MonoBehaviour
 
     public void RotateTurretLeft(bool rotateLeft)
     {
+        if (!IsAlive())
+        {
+            return;
+        }
         if (rotateLeft)
         {
             this.turret.transform.Rotate(0f, -this.tank.turretTurnSpeed * Time.deltaTime, 0f, Space.Self);
@@ -140,7 +159,11 @@ public class Tank : MonoBehaviour
 
     public void MoveGunUp(bool moveUp)
     {
-       
+        if (!IsAlive())
+        {
+            return;
+        }
+
         if (moveUp)
         {
             GunIsInBounds();  
@@ -177,7 +200,10 @@ public class Tank : MonoBehaviour
     #endregion
     public void FireMainGun()
     {
-        
+        if (!IsAlive())
+        {
+            return;
+        }
         Transform shootPos;
         shootPos = gunEdge.transform;
         
@@ -230,6 +256,10 @@ public class Tank : MonoBehaviour
     
     public void Hit(GameObject target, GameObject whoShot, string partThatWasHit, int projectileDamage, int projectilePenetration, Vector3 hitCoordinates, ParticleSystem penetrationParticle, ParticleSystem notPenetratedParticle)
     {
+        if (!IsAlive())
+        {
+            return;
+        }
         int[] armorValues = ArmorThicknessThatWasHit(partThatWasHit);
 
         if (combatSystem.GotHit(target, whoShot, projectilePenetration, armorValues))
@@ -253,11 +283,15 @@ public class Tank : MonoBehaviour
         }
     } 
 
-    private void DestroyTank()
+    public void DestroyTank()
     {
-        SetMaterialOnDeath();         
+        gameManager.ObjectWasDestroyed(this.gameObject, tank.scoreValue);
+        StopTracks();
+        SetMaterialOnDeath();
+        Destroy(gameObject, 5);
     }
 
+    
     void SetMaterialOnDeath()
     {
         Material chassisNewMaterial;
@@ -353,6 +387,19 @@ public class Tank : MonoBehaviour
             return false;
         }
 
+    }
+
+    bool IsAlive()
+    {
+        if (tank.hitPoints > 0)
+        {
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
     }
 
 }

@@ -9,6 +9,7 @@ public class PlayerTankController : MonoBehaviour
 {
     Tank controlledTank;
     [SerializeField] public GameObject playerTank;
+    Player playerSCR;
 
     [SerializeField] Vector3 tankPrecisionCamera;
     [SerializeField] CinemachineVirtualCameraBase thirdPersonCam;
@@ -36,7 +37,10 @@ public class PlayerTankController : MonoBehaviour
     
     void Start()
     {
+        playerSCR = GameObject.Find("Player").GetComponent<Player>();
         HandlePlayerController();
+
+        playerSCR.playerVehicle = playerTank;
     }
 
     void HandlePlayerController()

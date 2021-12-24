@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
-    
+    [SerializeField] GameManager gameManager;
     [SerializeField] List<GameObject> spawnPrefabList;
     int spawnPrefabListLenght;
 
@@ -17,8 +17,8 @@ public class SpawnManager : MonoBehaviour
     private void Start()
     {
         waveNumber = 0;
-        spawnPrefabListLenght = spawnPrefabList.Capacity;
-        SpawnWave();
+        spawnPrefabListLenght = spawnPrefabList.Count;
+        
     }
 
     int SelectObjectToSpawn()
@@ -27,12 +27,15 @@ public class SpawnManager : MonoBehaviour
         return objectToSpawn;
     }
 
-    void SpawnWave ()
+    public void SpawnWave ()
     {
-        for (int i = 0; i < spawnPoint.Capacity; i++)
+        for (int i = 0; i < spawnPoint.Count; i++)
         {
+            GameObject spawnedEnemy;
             int objectToSpawn = SelectObjectToSpawn();
-            Instantiate(spawnPrefabList[objectToSpawn], spawnPoint[i].transform.position, spawnPrefabList[objectToSpawn].transform.rotation);
+            spawnedEnemy = Instantiate(spawnPrefabList[objectToSpawn], spawnPoint[i].transform.position, spawnPrefabList[objectToSpawn].transform.rotation) as GameObject;
+            gameManager.enemiesList.Add(spawnedEnemy);
+            StartCoroutine(gameManager.navigationManagerSCR.LaunchingEnemy(spawnedEnemy, i + 1, gameManager.playerVehicle));
         }
         waveNumber++;
     }
